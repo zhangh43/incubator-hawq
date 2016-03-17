@@ -633,7 +633,6 @@ static void collect_range_tables(Query *query, List* full_range_table,
 static bool IsBuildInFunction(Oid foid) {
 
 	cqContext  *pcqCtx;
-	HeapTuple readtup = NULL;
 	HeapTuple	procedureTuple;
 	Form_pg_proc procedureStruct;
 
@@ -1801,7 +1800,7 @@ static int select_random_host_algorithm(Relation_Assignment_Context *context,
 	}
 	if (debug_fake_datalocality) {
 		fprintf(fp,
-				"cur_size_of_whole_query is:"INT64_FORMAT", avg_size_of_whole_query is: %.3f",
+				"cur_size_of_whole_query is:%.0f, avg_size_of_whole_query is: %.3f",
 				context->totalvols_with_penalty[minindex] + net_disk_ratio * splitsize,
 				context->avg_size_of_whole_query);
 	}
@@ -2361,7 +2360,7 @@ static Relation_File** change_file_order_based_on_continuity(
 		Relation_Data *rel_data, TargetSegmentIDMap* idMap, int host_num,
 		int* fileCount, Relation_Assignment_Context *assignment_context) {
 
-	Relation_File** file_vector;
+	Relation_File** file_vector = NULL;
 	int* isBlockContinue = (int *) palloc(sizeof(int) * host_num);
 	for (int i = 0; i < host_num; i++) {
 		isBlockContinue[i] = 0;
@@ -3397,45 +3396,45 @@ static void print_datalocality_overall_log_information(SplitAllocResult *result,
 			if(log_context->minSegmentNumofHost > 0 ){
 				fprintf(fpratio, "segmentnumber_perhost_max/min=%.2f\n", (double)(log_context->maxSegmentNumofHost / log_context->minSegmentNumofHost));
 			}else{
-				fprintf(fpratio, "segmentnumber_perhost_max/min="INT64_FORMAT"\n", INT64_MAX);
+				fprintf(fpratio, "segmentnumber_perhost_max/min=%lld\n", INT64_MAX);
 			}
 			if(log_context->avgSegmentNumofHost > 0 ){
 				fprintf(fpratio, "segmentnumber_perhost_max/avg=%.2f\n", (double)(log_context->maxSegmentNumofHost / log_context->avgSegmentNumofHost));
 			}else{
-				fprintf(fpratio, "segmentnumber_perhost_max/avg="INT64_FORMAT"\n", INT64_MAX);
+				fprintf(fpratio, "segmentnumber_perhost_max/avg=%lld\n", INT64_MAX);
 			}
 
 			if (log_context->minSizeSegmentOverall > 0){
 				fprintf(fpratio, "segments_size_max/min=%.5f\n", (double)log_context->maxSizeSegmentOverall / (double)log_context->minSizeSegmentOverall);
 			}else{
-				fprintf(fpratio, "segments_size_max/min="INT64_FORMAT"\n", INT64_MAX);
+				fprintf(fpratio, "segments_size_max/min=%lld\n", INT64_MAX);
 			}
 			if (log_context->avgSizeOverall > 0){
 				fprintf(fpratio, "segments_size_max/avg=%.5f\n", log_context->maxSizeSegmentOverall / log_context->avgSizeOverall);
 			}else{
-				fprintf(fpratio, "segments_size_max/avg="INT64_FORMAT"\n", INT64_MAX);
+				fprintf(fpratio, "segments_size_max/avg=%lld\n", INT64_MAX);
 			}
 
 			if (log_context->minSizeSegmentOverallPenalty > 0){
 				fprintf(fpratio, "segments_size_penalty_max/min=%.5f\n",(double)log_context->maxSizeSegmentOverallPenalty / (double)log_context->minSizeSegmentOverallPenalty);
 			}else{
-				fprintf(fpratio, "segments_size_penalty_max/min="INT64_FORMAT"\n", INT64_MAX);
+				fprintf(fpratio, "segments_size_penalty_max/min=%lld\n", INT64_MAX);
 			}
 			if (log_context->avgSizeOverallPenalty > 0){
 				fprintf(fpratio, "segments_size_penalty_max/avg=%.5f\n",log_context->maxSizeSegmentOverallPenalty / log_context->avgSizeOverallPenalty);
 			}else{
-				fprintf(fpratio, "segments_size_penalty_max/avg="INT64_FORMAT"\n", INT64_MAX);
+				fprintf(fpratio, "segments_size_penalty_max/avg=%lld\n", INT64_MAX);
 			}
 
 			if (log_context->minContinuityOverall > 0){
 				fprintf(fpratio, "continuity_max/min=%.5f\n",log_context->maxContinuityOverall / log_context->minContinuityOverall);
 			}else{
-				fprintf(fpratio, "continuity_max/min="INT64_FORMAT"\n", INT64_MAX);
+				fprintf(fpratio, "continuity_max/min=%lld\n", INT64_MAX);
 			}
 			if (log_context->avgContinuityOverall > 0){
 				fprintf(fpratio, "continuity_max/avg=%.5f\n",log_context->maxContinuityOverall / log_context->avgContinuityOverall);
 			}else{
-				fprintf(fpratio, "continuity_max/avg="INT64_FORMAT"\n", INT64_MAX);
+				fprintf(fpratio, "continuity_max/avg=%lld\n", INT64_MAX);
 			}
 			fflush(fpratio);
 			fclose(fpratio);

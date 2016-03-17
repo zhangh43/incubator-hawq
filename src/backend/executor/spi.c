@@ -1867,39 +1867,14 @@ _SPI_execute_plan(_SPI_plan * plan, Datum *Values, const char *Nulls,
 							(stmt->resource == NULL) &&
 							(stmt->resource_parameters != NULL))
 					{
-						SplitAllocResult *allocResult = NULL;
-
-						/* If this is a parallel plan. */
-						if (stmt->planTree->dispatch == DISPATCH_PARALLEL)
-						{
-							/*
-							 * Now, we want to allocate resource.
-							 */
-							allocResult = calculate_planner_segment_num(queryTree,
-							                                            stmt->resource_parameters->life,
-							                                            stmt->rtable,
-							                                            stmt->intoPolicy,
-							                                            stmt->nMotionNodes + stmt->nInitPlans + 1,
-							                                            stmt->resource_parameters->min_target_segment_num);
-
-							Assert(allocResult);
-
-							if(stmt->resource !=NULL)
-							{
-								pfree(stmt->resource);
-							}
-							stmt->resource = allocResult->resource;
-							if(stmt->scantable_splits !=NULL)
-							{
-								list_free_deep(stmt->scantable_splits);
-							}
-							stmt->scantable_splits = allocResult->alloc_results;
-							stmt->planner_segments = allocResult->planner_segments;
-							stmt->datalocalityInfo = allocResult->datalocalityInfo;
-							pfree(allocResult);
-						}
+						stmt->resource = AllocateResource(stmt->resource_parameters->life,
+								stmt->resource_parameters->slice_size,
+								stmt->resource_parameters->iobytes,
+								stmt->resource_parameters->max_target_segment_num,
+								stmt->resource_parameters->min_target_segment_num,
+								stmt->resource_parameters->vol_info,
+								stmt->resource_parameters->vol_info_size);
 					}
-
 					originalStmt->resource = NULL;
 				}
 

@@ -548,6 +548,8 @@ resource_negotiator(Query *parse, int cursorOptions, ParamListInfo boundParams,
     				int avgSliceNum = 3;
     				(*result)->saResult.resource = AllocateResource(QRL_ONCE, avgSliceNum, mincost,
     						GetUserDefinedFunctionVsegNum(),GetUserDefinedFunctionVsegNum(),NULL, 0);
+    			}else{
+    				(*result)->saResult.resource = AllocateResource(resourceLife, 0, 0, 0, 0, NULL, 0);
     			}
     		}
     }

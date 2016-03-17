@@ -745,9 +745,11 @@ int handleRB2RM_ClusterReport(void)
 						GET_SEGRESOURCE_HOSTNAME(segres),
 						SEGMENT_STATUS_DOWN,
 						(description->Len > 0)?description->Str:"");
-
-			freeSimpleStringContent(description);
-			rm_pfree(PCONTEXT, description);
+			if (description != NULL)
+			{
+				freeSimpleStringContent(description);
+				rm_pfree(PCONTEXT, description);
+			}
 		}
 	}
 	freePAIRRefList(&(PRESPOOL->Segments), &allsegres);

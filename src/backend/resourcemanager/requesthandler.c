@@ -1014,9 +1014,11 @@ bool handleRMRequestSegmentIsDown(void **arg)
 						add_segment_history_row(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
 												hostname,
 												description->Str);
-
-						freeSimpleStringContent(description);
-						rm_pfree(PCONTEXT, description);
+						if (description != NULL)
+						{
+							freeSimpleStringContent(description);
+							rm_pfree(PCONTEXT, description);
+						}
 					}
 
 					/* Set the host down. */

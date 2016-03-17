@@ -992,8 +992,11 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 									IS_SEGSTAT_FTSAVAILABLE(segresource->Stat) ?
 										SEG_STATUS_DESCRIPTION_UP:description->Str);
 
-			freeSimpleStringContent(description);
-			rm_pfree(PCONTEXT, description);
+			if (description != NULL)
+			{
+				freeSimpleStringContent(description);
+				rm_pfree(PCONTEXT, description);
+			}
 		}
 
 		if (segresource->Stat->FTSAvailable == RESOURCE_SEG_STATUS_AVAILABLE)
@@ -1240,9 +1243,11 @@ int addHAWQSegWithSegStat(SegStat segstat, bool *capstatchanged)
 										GET_SEGRESOURCE_HOSTNAME(segresource),
 										IS_SEGSTAT_FTSAVAILABLE(segresource->Stat) ?
 											SEG_STATUS_DESCRIPTION_UP:description->Str);
-
-				freeSimpleStringContent(description);
-				rm_pfree(PCONTEXT, description);
+				if (description != NULL)
+				{
+					freeSimpleStringContent(description);
+					rm_pfree(PCONTEXT, description);
+				}
 			}
 		}
 
@@ -1533,9 +1538,11 @@ int updateHAWQSegWithGRMSegStat( SegStat segstat)
 					IS_SEGSTAT_FTSAVAILABLE(segres->Stat) ?
 						SEGMENT_STATUS_UP:SEGMENT_STATUS_DOWN,
 					(description->Len > 0)?description->Str:"");
-
-		freeSimpleStringContent(description);
-		rm_pfree(PCONTEXT, description);
+		if (description != NULL)
+		{
+			freeSimpleStringContent(description);
+			rm_pfree(PCONTEXT, description);
+		}
 	}
 
 	int32_t curratio = 0;

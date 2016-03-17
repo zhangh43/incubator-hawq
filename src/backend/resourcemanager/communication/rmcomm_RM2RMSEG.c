@@ -243,9 +243,11 @@ void receivedRUAliveResponse(AsyncCommMessageHandlerContext  context,
 				add_segment_history_row(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
 										GET_SEGRESOURCE_HOSTNAME(segres),
 										description->Str);
-
-				freeSimpleStringContent(description);
-				rm_pfree(PCONTEXT, description);
+				if (description != NULL)
+				{
+					freeSimpleStringContent(description);
+					rm_pfree(PCONTEXT, description);
+				}
 			}
 			/* Set the host down. */
 			elog(WARNING, "Resource manager sets host %s from up to down "
@@ -302,9 +304,11 @@ void sentRUAliveError(AsyncCommMessageHandlerContext context)
 			add_segment_history_row(segres->Stat->ID + REGISTRATION_ORDER_OFFSET,
 									GET_SEGRESOURCE_HOSTNAME(segres),
 									description->Str);
-
-			freeSimpleStringContent(description);
-			rm_pfree(PCONTEXT, description);
+			if (description != NULL)
+			{
+				freeSimpleStringContent(description);
+				rm_pfree(PCONTEXT, description);
+			}
 		}
 		/* Set the host down. */
 		elog(LOG, "Resource manager sets host %s from up to down "

@@ -981,11 +981,6 @@ dispatcher_bind_executor(DispatchData *data)
 		}
 	}
 
-	for (i = 0; i < data->job.used_slices_num; i++)
-	{
-	 write_log("QQQQLO sliceIndex:%d,dispatchResultBeg:%d,dispatchResultEnd:%d",
-	     i, data->results->sliceMap[i].resultBegin, data->results->sliceMap[i].resultEnd);
-	}
 
 	if (data->dispatch_to_all_cached_executors)
 		elog(DEBUG1, "dispatch to all cached executors: expected: %d actual: %d new connected(should be 0): %d",
@@ -1002,6 +997,12 @@ dispatcher_bind_executor(DispatchData *data)
 	foreach(lc, concurrent_connect_executors)
 		dispmgt_free_preconnect_info(lfirst(lc));
 	list_free(concurrent_connect_executors);
+
+  for (i = 0; i < data->job.used_slices_num; i++)
+  {
+   write_log("QQQQLO sliceIndex:%d,dispatchResultBeg:%d,dispatchResultEnd:%d",
+       i, data->results->sliceMap[i].resultBegin, data->results->sliceMap[i].resultEnd);
+  }
 
 	return ret;
 }

@@ -592,6 +592,9 @@ cdbexplain_recvExecStats(struct PlanState              *planstate,
     dispatchResultEnd = cdbdisp_resultEnd(dispatchResults, sliceIndex);
     nDispatch = dispatchResultEnd - dispatchResultBeg;
 
+    write_log("QQQQL sliceIndex:%d,dispatchResultBeg:%d,dispatchResultEnd:%d,ob:%d,oe:%d",sliceIndex,dispatchResultBeg,dispatchResultEnd,
+        dispatchResults->sliceMap[sliceIndex].resultBegin,dispatchResults->sliceMap[sliceIndex].resultEnd);
+
     /* Initialize worker counts. */
     memset(&ds, 0, sizeof(ds));
     ds.nResult = nDispatch;

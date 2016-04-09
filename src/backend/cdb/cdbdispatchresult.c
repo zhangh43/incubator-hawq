@@ -27,7 +27,7 @@
 
 #include "postgres.h"
 #include <pthread.h>
-
+#include "portability/instr_time.h"
 #include "gp-libpq-fe.h"               /* prerequisite for libpq-int.h */
 #include "gp-libpq-int.h"              /* PQExpBufferData */
 
@@ -48,6 +48,65 @@
  */
 static pthread_mutex_t  setErrcodeMutex = PTHREAD_MUTEX_INITIALIZER;
 
+
+typedef struct CdbExplain_StatInst
+{
+    NodeTag     pstype;         /* PlanState node type */
+  bool        running;        /* True if we've completed first tuple */
+  instr_time  starttime;    /* Start time of current iteration of node */
+  instr_time  counter;    /* Accumulated runtime for this node */
+  double    firsttuple;   /* Time for first tuple of this cycle */
+    double      startup;        /* Total startup time (in seconds) */
+    double      total;          /* Total total time (in seconds) */
+    double      ntuples;        /* Total tuples produced */
+    double      nloops;         /* # of run cycles for this node */
+    double      execmemused;    /* executor memory used (bytes) */
+    double      workmemused;    /* work_mem actually used (bytes) */
+    double      workmemwanted;  /* work_mem to avoid workfile i/o (bytes) */
+  bool        workfileReused; /* workfile reused in this node */
+  bool        workfileCreated;/* workfile created in this node */
+  instr_time  firststart;   /* Start time of first iteration of node */
+  double    peakMemBalance; /* Max mem account balance */
+  int   numPartScanned; /* Number of part tables scanned */
+    int         bnotes;         /* Offset to beginning of node's extra text */
+    int         enotes;         /* Offset to end of node's extra text */
+} CdbExplain_StatInst;
+
+
+/* EXPLAIN ANALYZE statistics for one process working on one slice */
+typedef struct CdbExplain_SliceWorker
+{
+    double      peakmemused;    /* bytes alloc in per-query mem context tree */
+    double    vmem_reserved;  /* vmem reserved by a QE */
+    double    memory_accounting_global_peak;  /* peak memory observed during memory accounting */
+} CdbExplain_SliceWorker;
+
+
+/* Header of EXPLAIN ANALYZE statistics message sent from qExec to qDisp */
+typedef struct CdbExplain_StatHdr
+{
+    NodeTag     type;           /* T_CdbExplain_StatHdr */
+    int         segindex;       /* segment id */
+    char       hostname[SEGMENT_IDENTITY_NAME_LENGTH];       /* segment hostname */
+    int         nInst;          /* num of StatInst entries following StatHdr */
+    int         bnotes;         /* offset to extra text area */
+    int         enotes;         /* offset to end of extra text area */
+
+    int     memAccountTreeNodeCount;     /* How many mem account we serialized */
+    int     memAccountTreeStartOffset; /* Where in the header our mem account tree is serialized */
+
+    CdbExplain_SliceWorker  worker;     /* qExec's overall stats for slice */
+
+    /*
+     * During serialization, we use this as a temporary StatInst and save "one-at-a-time"
+     * StatInst into this variable. We then write this variable into buffer (serialize it)
+     * and then "recycle" the same inst for next plan node's StatInst.
+     * During deserialization, an Array [0..nInst-1] of StatInst entries is appended starting here.
+     */
+    CdbExplain_StatInst inst[1];
+
+    /* extra text is appended after that */
+} CdbExplain_StatHdr;
 
 /*--------------------------------------------------------------------*/
 
@@ -372,7 +431,6 @@ cdbdisp_appendMessage(CdbDispatchResult    *dispatchResult,
 
 }                               /* cdbdisp_appendMessage */
 
-
 /* Store a PGresult object ptr in the result buffer.
  * NB: Caller must not PQclear() the PGresult object.
  */
@@ -389,6 +447,71 @@ cdbdisp_appendResult(CdbDispatchResult *dispatchResult,
                            dispatchResult->segdbDesc->whoami);
 
     appendBinaryPQExpBuffer(dispatchResult->resultbuf, (char *)&res, sizeof(res));
+
+    {
+      pgCdbStatCell      *statcell;
+      CdbExplain_StatHdr *hdr;
+      /* Find our statistics in list of response messages.  If none, skip. */
+         for (statcell = res->cdbstats; statcell; statcell = statcell->next)
+         {
+             if (IsA((Node *)statcell->data, CdbExplain_StatHdr))
+                 break;
+         }
+         if (!statcell)
+             return;
+
+         hdr = (CdbExplain_StatHdr *)statcell->data;
+         //elog(LOG, "QQQQQE plannode");
+          if (hdr) {
+            if (dispatchResult->segdbDesc && dispatchResult->segdbDesc->whoami) {
+              write_log("QQQQQER1 plannode NUM:%d seg:%s",hdr->nInst, dispatchResult->segdbDesc->whoami);
+            } else {
+              write_log("QQQQQER1 plannode NUM:%d",hdr->nInst);
+            }
+          } else {
+            if (dispatchResult->segdbDesc && dispatchResult->segdbDesc->whoami) {
+              write_log("QQQQQER1 plannode NUM:empty seg:%s",dispatchResult->segdbDesc->whoami);
+            }else{
+              write_log("QQQQQER1 plannode NUM:empty");
+            }
+          }
+    }
+    {
+       PGresult           *pgresult;
+       CdbExplain_StatHdr *hdr;
+       pgCdbStatCell      *statcell;
+
+
+       /* Find this qExec's last PGresult.  If none, skip to next qExec. */
+       pgresult = cdbdisp_getPGresult(dispatchResult, -1);
+       if (!pgresult)
+         return;
+
+       /* Find our statistics in list of response messages.  If none, skip. */
+       for (statcell = pgresult->cdbstats; statcell; statcell = statcell->next)
+       {
+           if (IsA((Node *)statcell->data, CdbExplain_StatHdr))
+               break;
+       }
+       if (!statcell)
+           return;
+
+       hdr = (CdbExplain_StatHdr *)statcell->data;
+       //elog(LOG, "QQQQQE plannode");
+        if (hdr) {
+          if (dispatchResult->segdbDesc && dispatchResult->segdbDesc->whoami) {
+            write_log("QQQQQER1 plannode NUM:%d seg:%s",hdr->nInst, dispatchResult->segdbDesc->whoami);
+          } else {
+            write_log("QQQQQER1 plannode NUM:%d",hdr->nInst);
+          }
+        } else {
+          if (dispatchResult->segdbDesc && dispatchResult->segdbDesc->whoami) {
+            write_log("QQQQQER1 plannode NUM:empty seg:%s",dispatchResult->segdbDesc->whoami);
+          }else{
+            write_log("QQQQQER1 plannode NUM:empty");
+          }
+        }
+    }
 }                               /* cdbdisp_appendResult */
 
 

@@ -1245,7 +1245,8 @@ ExecutorRun(QueryDesc *queryDesc,
 		{
 			PG_TRY();
 			{
-				cdbexplain_sendExecStats(queryDesc);
+			  //elog(LOG, "QQQQQE exception pid=");
+				cdbexplain_sendExecStats(queryDesc,1);
 			}
 			PG_CATCH();
 			{
@@ -1348,7 +1349,8 @@ ExecutorEnd(QueryDesc *queryDesc)
 	if (estate->es_sliceTable &&
 			estate->es_sliceTable->doInstrument &&
 			Gp_role == GP_ROLE_EXECUTE)
-		cdbexplain_sendExecStats(queryDesc);
+	  //elog(LOG, "QQQQQE normal pid");
+		cdbexplain_sendExecStats(queryDesc,0);
 
 	/*
 	 * if needed, collect mpp dispatch results and tear down

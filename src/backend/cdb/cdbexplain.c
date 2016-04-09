@@ -48,14 +48,18 @@
 #include "parser/parsetree.h"
 #include "utils/vmem_tracker.h"
 
-/* EXPLAIN ANALYZE statistics for one plan node of a slice */
+
+
+
+
+
 typedef struct CdbExplain_StatInst
 {
     NodeTag     pstype;         /* PlanState node type */
-	bool        running;        /* True if we've completed first tuple */
-	instr_time	starttime;		/* Start time of current iteration of node */
-	instr_time	counter;		/* Accumulated runtime for this node */
-	double		firsttuple;		/* Time for first tuple of this cycle */
+    bool        running;        /* True if we've completed first tuple */
+    instr_time  starttime;    /* Start time of current iteration of node */
+    instr_time  counter;    /* Accumulated runtime for this node */
+    double    firsttuple;   /* Time for first tuple of this cycle */
     double      startup;        /* Total startup time (in seconds) */
     double      total;          /* Total total time (in seconds) */
     double      ntuples;        /* Total tuples produced */
@@ -63,11 +67,11 @@ typedef struct CdbExplain_StatInst
     double      execmemused;    /* executor memory used (bytes) */
     double      workmemused;    /* work_mem actually used (bytes) */
     double      workmemwanted;  /* work_mem to avoid workfile i/o (bytes) */
-	bool        workfileReused; /* workfile reused in this node */
-	bool        workfileCreated;/* workfile created in this node */
-	instr_time	firststart;		/* Start time of first iteration of node */
-	double		peakMemBalance; /* Max mem account balance */
-	int		numPartScanned; /* Number of part tables scanned */
+    bool        workfileReused; /* workfile reused in this node */
+    bool        workfileCreated;/* workfile created in this node */
+    instr_time  firststart;   /* Start time of first iteration of node */
+    double    peakMemBalance; /* Max mem account balance */
+    int   numPartScanned; /* Number of part tables scanned */
     int         bnotes;         /* Offset to beginning of node's extra text */
     int         enotes;         /* Offset to end of node's extra text */
 } CdbExplain_StatInst;
@@ -77,8 +81,8 @@ typedef struct CdbExplain_StatInst
 typedef struct CdbExplain_SliceWorker
 {
     double      peakmemused;    /* bytes alloc in per-query mem context tree */
-    double		vmem_reserved;	/* vmem reserved by a QE */
-    double		memory_accounting_global_peak;	/* peak memory observed during memory accounting */
+    double    vmem_reserved;  /* vmem reserved by a QE */
+    double    memory_accounting_global_peak;  /* peak memory observed during memory accounting */
 } CdbExplain_SliceWorker;
 
 
@@ -92,8 +96,8 @@ typedef struct CdbExplain_StatHdr
     int         bnotes;         /* offset to extra text area */
     int         enotes;         /* offset to end of extra text area */
 
-    int			memAccountTreeNodeCount;     /* How many mem account we serialized */
-    int			memAccountTreeStartOffset; /* Where in the header our mem account tree is serialized */
+    int     memAccountTreeNodeCount;     /* How many mem account we serialized */
+    int     memAccountTreeStartOffset; /* Where in the header our mem account tree is serialized */
 
     CdbExplain_SliceWorker  worker;     /* qExec's overall stats for slice */
 
@@ -108,7 +112,6 @@ typedef struct CdbExplain_StatHdr
     /* extra text is appended after that */
 } CdbExplain_StatHdr;
 
-
 /* Dispatch status summarized over workers in a slice */
 typedef struct CdbExplain_DispatchSummary
 {
@@ -119,7 +122,6 @@ typedef struct CdbExplain_DispatchSummary
     int         nNotDispatched;
     int         nIgnorableError;
 } CdbExplain_DispatchSummary;
-
 
 /* One node's EXPLAIN ANALYZE statistics for all the workers of its segworker group */
 typedef struct CdbExplain_NodeSummary
@@ -364,7 +366,7 @@ cdbexplain_localStatWalker(PlanState *planstate, void *context)
  *    attach the message to the current command's PGresult object.
  */
 void
-cdbexplain_sendExecStats(QueryDesc *queryDesc)
+cdbexplain_sendExecStats(QueryDesc *queryDesc, int error)
 {
     EState                 *estate;
     PlanState              *planstate;
@@ -427,6 +429,9 @@ cdbexplain_sendExecStats(QueryDesc *queryDesc)
     /* Obtain per-slice stats and put them in StatHdr. */
     cdbexplain_collectSliceStats(planstate, &ctx.hdr.worker);
 
+    write_log("QQQQQES1 plannode NUM:%d seg%d,pid=%d, %s error=%d",ctx.hdr.nInst,ctx.hdr.segindex, getpid() ,ctx.hdr.hostname,error);
+    //elog(LOG, "QQQQQE plannode NUM:%d seg%d,pid=, %s ",ctx.hdr.nInst,ctx.hdr.segindex ,ctx.hdr.hostname);
+    //elog(LOG, "QQQQQE plannode");
     /* Append MemoryAccount Tree */
     ctx.hdr.memAccountTreeStartOffset = ctx.buf.len - hoff;
     initStringInfo(&memoryAccountTreeBuffer);
@@ -477,7 +482,62 @@ cdbexplain_sendStatWalker(PlanState *planstate, void *context)
     return CdbVisit_Walk;
 }                               /* cdbexplain_sendStatWalker */
 
+void huanlog(struct CdbDispatchResults *data, int sliceIndex){
+  CdbDispatchResults *dispatchResults = data;
+  CdbDispatchResult          *dispatchResultBeg;
+     CdbDispatchResult          *dispatchResultEnd;
+     CdbExplain_RecvStatCtx      ctx;
+     CdbExplain_DispatchSummary  ds;
+     MemoryContext   oldcxt;
+     int             iDispatch;
+     int             nDispatch;
+     int             imsgptr;
+     bool            isFirstValidateStat = true;
 
+     /* Find the slice's CdbDispatchResult objects. */
+     dispatchResultBeg = cdbdisp_resultBegin(dispatchResults, sliceIndex);
+     dispatchResultEnd = cdbdisp_resultEnd(dispatchResults, sliceIndex);
+     nDispatch = dispatchResultEnd - dispatchResultBeg;
+
+     for (iDispatch = 0; iDispatch < nDispatch; iDispatch++)
+     {
+         CdbDispatchResult  *dispatchResult = &dispatchResultBeg[iDispatch];
+         PGresult           *pgresult;
+         CdbExplain_StatHdr *hdr;
+         pgCdbStatCell      *statcell;
+
+
+         /* Find this qExec's last PGresult.  If none, skip to next qExec. */
+         pgresult = cdbdisp_getPGresult(dispatchResult, -1);
+         if (!pgresult)
+             continue;
+
+         /* Find our statistics in list of response messages.  If none, skip. */
+         for (statcell = pgresult->cdbstats; statcell; statcell = statcell->next)
+         {
+             if (IsA((Node *)statcell->data, CdbExplain_StatHdr))
+                 break;
+         }
+         if (!statcell)
+             continue;
+
+         hdr = (CdbExplain_StatHdr *)statcell->data;
+         //elog(LOG, "QQQQQE plan");
+         if(hdr){
+         if(dispatchResult->segdbDesc && dispatchResult->segdbDesc->whoami){
+           write_log("QQQQQE plannode NUM:%d seg%d %s slice:%d resultNUM:%d",hdr->nInst,iDispatch,dispatchResult->segdbDesc->whoami, sliceIndex,nDispatch);
+         }else{
+           write_log("QQQQQE plannode NUM:%d seg%d slice:%d",hdr->nInst,iDispatch, sliceIndex);
+         }
+         }else{
+           if(dispatchResult->segdbDesc && dispatchResult->segdbDesc->whoami){
+             write_log("QQQQQE plannode NUM:empty seg%d %s slice:%d",iDispatch,dispatchResult->segdbDesc->whoami, sliceIndex);
+           }else{
+             write_log("QQQQQE plannode NUM:empty seg:%d slice:%d",iDispatch, sliceIndex);
+         }
+         }
+     }
+}
 /*
  * cdbexplain_recvExecStats
  *    Called by qDisp to transfer a slice's EXPLAIN ANALYZE statistics
@@ -505,6 +565,7 @@ cdbexplain_recvExecStats(struct PlanState              *planstate,
     int             imsgptr;
     bool            isFirstValidateStat = true;
 
+    huanlog(dispatchResults, sliceIndex);
     if (!planstate ||
         !planstate->instrument ||
         !showstatctx)

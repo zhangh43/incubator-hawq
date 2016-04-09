@@ -40,6 +40,10 @@ struct StringInfoData;                  /* #include "lib/stringinfo.h" */
 struct CdbExplain_ShowStatCtx;          /* private, in "cdb/cdbexplain.c" */
 struct PlannedStmt;
 
+void huanlog(struct CdbDispatchResults *data, int sliceIndex);
+/* EXPLAIN ANALYZE statistics for one plan node of a slice */
+
+
 static inline void
 cdbexplain_agg_init0(CdbExplain_Agg *agg)
 {
@@ -122,7 +126,7 @@ cdbexplain_localExecStats(struct PlanState                 *planstate,
  *    On the qDisp, libpq will attach this data to the PGresult object.
  */
 void
-cdbexplain_sendExecStats(struct QueryDesc *queryDesc);
+cdbexplain_sendExecStats(struct QueryDesc *queryDesc, int error);
 
 /*
  * cdbexplain_recvExecStats

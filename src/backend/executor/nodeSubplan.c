@@ -1127,6 +1127,7 @@ ExecSetParamPlan(SubPlanState *node, ExprContext *econtext, QueryDesc *gbl_query
              * to finish unless an error is detected before all are dispatched.
 			 */
 			queryDesc->estate->dispatch_data = initialize_dispatch_data(queryDesc->resource, false);
+			// huanlog(queryDesc->estate->dispatch_data,1)
 			prepare_dispatch_query_desc(queryDesc->estate->dispatch_data, queryDesc);
 			dispatch_run(queryDesc->estate->dispatch_data);
 			cleanup_dispatch_data(queryDesc->estate->dispatch_data);

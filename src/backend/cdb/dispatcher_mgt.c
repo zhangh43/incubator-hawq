@@ -62,21 +62,6 @@ typedef struct QueryExecutorGroupIterator
 	int		group_id;
 } QueryExecutorGroupIterator;
 
-/*
- * ConcurrentConnectExecutorInfo
- *	Used to create the executor concurrently.
- */
-typedef struct ConcurrentConnectExecutorInfo {
-	bool					is_writer;
-	bool					is_superuser;
-	struct QueryExecutor	*executor;
-	struct DispatchData		*data;
-	struct DispatchSlice	*slice;
-	struct DispatchTask		*task;
-
-	struct SegmentDatabaseDescriptor *desc;
-} ConcurrentConnectExecutorInfo;
-
 
 /* Iterate all of groups. */
 static void	dispmgt_init_query_executor_group_iterator(QueryExecutorTeam *team,
@@ -554,7 +539,7 @@ dispmgt_concurrent_connect(List	*executors, int executors_num_per_thread)
 	dispmgt_free_concurrent_connect_state(tasks);
 	workermgr_free_workermgr_state(state);
 
-	return dispmgt_bind_executor_task(executors);
+	return true;
 }
 
 ConcurrentConnectExecutorInfo *

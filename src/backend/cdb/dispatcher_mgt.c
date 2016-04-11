@@ -518,8 +518,6 @@ dispmgt_concurrent_connect(List	*executors, int executors_num_per_thread)
 
 		workermgr_cancel_job(state);
 		/* We have to clean up the executors. */
-		foreach(lc, executors)
-			executormgr_free_executor(((ConcurrentConnectExecutorInfo *) lfirst(lc))->desc);
 
 		dispmgt_free_concurrent_connect_state(tasks);
 		workermgr_free_workermgr_state(state);

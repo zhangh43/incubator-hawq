@@ -47,6 +47,7 @@
 #include "executor/nodeFunctionscan.h"
 #include "nodes/stack.h"
 #include "cdb/cdbdatalocality.h"
+#include "optimizer/planner.h"
 
 extern char *savedSeqServerHost;
 extern int savedSeqServerPort;
@@ -1854,29 +1855,12 @@ _SPI_execute_plan(_SPI_plan * plan, Datum *Values, const char *Nulls,
 				 * Get copy of the queryTree and the plan since this may be modified further down.
 				 */
 				queryTree = copyObject(queryTree);
-				PlannedStmt *stmt = copyObject(originalStmt);
-
-				/*
-				 * We only allocate resource for multiple executions of queries, NOT for utility commands.
-				 * SELECT/INSERT are supported at present.
-				 */
-				if((queryTree->commandType == CMD_SELECT) ||
-						(queryTree->commandType == CMD_INSERT))
+				if ((queryTree->commandType == CMD_SELECT) ||
+				    (queryTree->commandType == CMD_INSERT))
 				{
-					if ((Gp_role == GP_ROLE_DISPATCH) &&
-							(stmt->resource == NULL) &&
-							(stmt->resource_parameters != NULL))
-					{
-						stmt->resource = AllocateResource(stmt->resource_parameters->life,
-								stmt->resource_parameters->slice_size,
-								stmt->resource_parameters->iobytes,
-								stmt->resource_parameters->max_target_segment_num,
-								stmt->resource_parameters->min_target_segment_num,
-								stmt->resource_parameters->vol_info,
-								stmt->resource_parameters->vol_info_size);
-					}
-					originalStmt->resource = NULL;
-				}
+				  originalStmt = refineCachedPlan(originalStmt, queryTree, 0 ,NULL);
+        }
+				PlannedStmt *stmt = copyObject(originalStmt);
 
 				_SPI_current->processed = 0;
 				_SPI_current->lastoid = InvalidOid;

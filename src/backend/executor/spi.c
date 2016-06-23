@@ -1147,19 +1147,11 @@ SPI_cursor_open(const char *name, SPIPlanPtr plan,
 	qtlist = copyObject(qtlist);
 	ptlist = copyObject(ptlist);
 
-	PlannedStmt* stmt = (PlannedStmt*)linitial(ptlist);
+	Query    *queryTree = (Query *) linitial(qtlist);
+	queryTree = copyObject(queryTree);
 
-	if ( (Gp_role == GP_ROLE_DISPATCH) &&
-			 (stmt->resource_parameters != NULL) )
-	{
-		/*
-		 * Now, we want to allocate resource.
-		 */
-		stmt->resource = AllocateResource(stmt->resource_parameters->life, stmt->resource_parameters->slice_size,
-				stmt->resource_parameters->iobytes, stmt->resource_parameters->max_target_segment_num,
-				stmt->resource_parameters->min_target_segment_num, stmt->resource_parameters->vol_info,
-				stmt->resource_parameters->vol_info_size);
-	}
+	PlannedStmt* stmt = (PlannedStmt*)linitial(ptlist);
+	stmt = refineCachedPlan(stmt, queryTree, 0 ,NULL);
 
 	/* If the plan has parameters, set them up */
 	if (spiplan->nargs > 0)

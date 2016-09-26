@@ -574,24 +574,22 @@ class HawqRegister(object):
                     sys.exit(1)
                 else:
                     self.do_not_move, self.files_update, self.sizes_update = True, self.files, self.sizes
-                    self.files, self.sizes = [], []
             elif len(self.files) < len(existed_files):
                 logger.error('In force mode, you should include existing table files in yaml configuration file. Otherwise you should drop the previous table before register --force.')
                 self.failure_handler.rollback()
                 sys.exit(1)
             else:
-                files_old, sizes_old = [f for f in self.files], [sz for sz in self.sizes]
-                for k, f in enumerate(files_old):
+                self.newfiles, self.newsizes = [f for f in self.files], [sz for sz in self.sizes]
+                for k, f in enumerate(self.files):
                     if f in existed_files:
-                        self.files_update.append(files_old[k])
-                        self.sizes_update.append(sizes_old[k])
-                        self.files.remove(files_old[k])
-                        self.sizes.remove(sizes_old[k])
+                        self.files_update.append(self.files[k])
+                        self.sizes_update.append(self.sizes[k])
+                        self.newfiles.remove(files_old[k])
+                        self.newsizes.remove(sizes_old[k])
                 if sorted(self.files_update) != sorted(existed_files):
                     logger.error('In force mode, you should include existing table files in yaml configuration file. Otherwise you should drop the previous table before register --force.')
                     self.failure_handler.rollback()
                     sys.exit(1)
-
         elif self.mode == 'repair':
             self.do_not_move = True
             self.files_update, self.sizes_update = [fn for fn in self.files], [sz for sz in self.sizes]
@@ -692,7 +690,7 @@ class HawqRegister(object):
     def _move_files_in_hdfs(self):
         '''Move file(s) in src path into the folder correspoding to the target table'''
         segno = self.firstsegno
-        for f in self.files:
+        for f in self.newfiles:
             srcfile = f
             dstfile = self.tabledir + str(segno)
             segno += 1
@@ -729,6 +727,23 @@ class HawqRegister(object):
                 for k, eof in enumerate(eofs[1:]):
                     query += ',(%d, %d, %d, %d, %d)' % (self.firstsegno + k + 1, eof, -1, -1, -1)
             query += ';'
+        elif mode == 'force':
+            eofs = self.sizes
+            query = "set allow_system_table_mods='dml';"
+            query += "begin transaction;"
+            segno_lst = [f.split('/')[-1] for f in self.files]
+            query += "delete from pg_aoseg.%s;" % (self.seg_name)
+            self.firstsegno = 1
+            if self.file_format == 'Parquet':
+                query += 'insert into pg_aoseg.%s values(%d, %d, %d, %d)' % (self.seg_name, self.firstsegno, eofs[0], -1, -1)
+                for k, eof in enumerate(eofs[1:]):
+                    query += ',(%d, %d, %d, %d)' % (self.firstsegno + k + 1, eof, -1, -1)
+            else:
+                query += 'insert into pg_aoseg.%s values(%d, %d, %d, %d, %d)' % (self.seg_name, self.firstsegno, eofs[0], -1, -1, -1)
+                for k, eof in enumerate(eofs[1:]):
+                    query += ',(%d, %d, %d, %d, %d)' % (self.firstsegno + k + 1, eof, -1, -1, -1)
+            query += ';'
+            query += "end transaction;"
         elif mode == 'update':
             eofs = self.sizes_update
             query = "set allow_system_table_mods='dml';"
@@ -792,10 +807,10 @@ class HawqRegister(object):
         if not self.do_not_move:
             self._move_files_in_hdfs()
         if (not self.do_not_move) and self.mode == 'force':
-            self._modify_metadata('update_and_insert')
+            self._modify_metadata('force')
         else:
             if self.mode == 'force':
-                self._modify_metadata('update')
+                self._modify_metadata('force')
             elif self.mode == 'repair':
                 self._modify_metadata('update')
                 if self.files_delete:

@@ -2669,6 +2669,8 @@ List *getActionName(AclMode mask)
 
 bool fallBackToNativeCheck(AclObjectKind objkind, Oid obj_oid, Oid roleid)
 {
+  //ranger branch which never falls back to the native acl check
+  return false;
   /* get the latest information_schema_namespcace_oid. Since caql access heap table
    * directly without aclcheck, this function will not be called recursively
    */

@@ -135,7 +135,8 @@ void SQLUtility::query(const string &sql, const string &expectStr) {
 
 void SQLUtility::execSQLFile(const string &sqlFile,
                              const string &ansFile,
-                             const string &initFile) {
+                             const string &initFile,
+							 bool usingDefaultSchema) {
   FilePath fp;
 
   // do precheck for sqlFile & ansFile
@@ -152,7 +153,7 @@ void SQLUtility::execSQLFile(const string &sqlFile,
     ASSERT_TRUE(false) << ansFileAbsPath << " is invalid";
 
   // generate new sql file with set search_path added at the begining
-  const string newSqlFile = generateSQLFile(sqlFile);
+  const string newSqlFile = generateSQLFile(sqlFile, usingDefaultSchema);
 
   // outFile is located in the same folder with ansFile
   string outFileAbsPath = fp.path + "/" + fp.fileBaseName + ".out";
@@ -188,7 +189,7 @@ void SQLUtility::execSQLFile(const string &sqlFile,
   }
 }
 
-bool SQLUtility::execSQLFile(const string &sqlFile) {
+bool SQLUtility::execSQLFile(const string &sqlFile, bool usingDefaultSchema) {
   // do precheck for sqlFile
   if (hawq::test::startsWith(sqlFile, "/"))
     return false;
@@ -197,19 +198,18 @@ bool SQLUtility::execSQLFile(const string &sqlFile) {
   FilePath fp = splitFilePath(sqlFile);
   if (fp.fileBaseName.empty())
     return false;
-
   // outFile is located in the same folder with ansFile
   string outFileAbsPath = "/tmp/" + fp.fileBaseName + ".out";
 
   // generate new sql file with set search_path added at the begining
-  const string newSqlFile = generateSQLFile(sqlFile);
+  const string newSqlFile = generateSQLFile(sqlFile, usingDefaultSchema);
 
   // run sql file and store its result in output file
   conn->setOutputFile(outFileAbsPath);
   return conn->runSQLFile(newSqlFile).getLastStatus() == 0 ? true : false;
 }
 
-const string SQLUtility::generateSQLFile(const string &sqlFile) {
+const string SQLUtility::generateSQLFile(const string &sqlFile, bool usingDefaultSchema) {
   const string originSqlFile = testRootPath + "/" + sqlFile;
   const string newSqlFile = "/tmp/" + string(test_info->test_case_name()) + "_" + test_info->name() + ".sql";
   std::fstream in;
@@ -223,7 +223,9 @@ const string SQLUtility::generateSQLFile(const string &sqlFile) {
     EXPECT_TRUE(false) << "Error opening file " << newSqlFile;
   }
   out << "-- start_ignore" << std::endl;
-  out << "SET SEARCH_PATH=" + schemaName + ";" << std::endl;
+  if (!usingDefaultSchema) {
+	  out << "SET SEARCH_PATH=" + schemaName + ";" << std::endl;
+  }
   if (sql_util_mode ==  MODE_DATABASE) {
     out << "\\c " << databaseName << std::endl;
   }

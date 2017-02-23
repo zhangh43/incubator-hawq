@@ -1939,7 +1939,7 @@ static void checkNamespaceInternal(List **oidlist, Oid namespaceId, Oid roleid)
 		*oidlist = lappend_oid(*oidlist, namespaceId);
 	}
 	else {
-		if (OidIsValid(namespaceId)) {
+		if (OidIsValid(namespaceId) && aclType == HAWQ_ACL_RANGER) {
 			elog(WARNING, "usage privilege of namespace %s is required.",
 					getNamespaceNameByOid(namespaceId));
 		}
@@ -2118,6 +2118,10 @@ recomputeNamespacePath(void)
 	/* Mark the path valid. */
 	namespaceSearchPathValid = true;
 	namespaceUser = roleid;
+	if (debug_query_string != NULL) {
+		last_query_sign = string_hash(debug_query_string, strlen(debug_query_string));
+	}
+
 
 	/* Clean up. */
 	pfree(rawname);

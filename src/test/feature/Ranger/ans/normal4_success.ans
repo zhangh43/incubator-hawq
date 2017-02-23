@@ -1,0 +1,10 @@
+-- start_ignore
+-- end_ignore
+set session role=usertest4;
+SET
+select * from f4();
+ f4 
+----
+ 
+(1 row)
+

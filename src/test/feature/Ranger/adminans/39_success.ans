@@ -1,0 +1,4 @@
+set session role=usertest;
+set search_path=public;
+create temp table ta(i int);
+

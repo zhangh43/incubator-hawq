@@ -1,0 +1,2 @@
+DEALLOCATE fooplan;
+

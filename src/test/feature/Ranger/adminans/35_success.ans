@@ -1,0 +1,4 @@
+set session role=usertest;
+set search_path=public;
+set role user1;
+

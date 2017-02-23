@@ -1,0 +1,8 @@
+-- start_ignore
+-- end_ignore
+select * from f4();
+ f4 
+----
+ 
+(1 row)
+

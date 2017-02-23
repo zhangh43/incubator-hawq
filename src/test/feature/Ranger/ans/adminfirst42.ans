@@ -1,0 +1,10 @@
+-- start_ignore
+-- end_ignore
+select generate_series(1,3);
+ generate_series 
+-----------------
+               1
+               2
+               3
+(3 rows)
+

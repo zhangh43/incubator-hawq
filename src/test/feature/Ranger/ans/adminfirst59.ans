@@ -1,0 +1,12 @@
+-- start_ignore
+-- end_ignore
+\d
+                List of relations
+ Schema | Name | Type  |   Owner   |   Storage   
+--------+------+-------+-----------+-------------
+ public | a    | table | huanzhang | append only
+ public | aa   | table | huanzhang | append only
+ public | aaa  | table | huanzhang | append only
+ public | av   | view  | huanzhang | none
+(4 rows)
+

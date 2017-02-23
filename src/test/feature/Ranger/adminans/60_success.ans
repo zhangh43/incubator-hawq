@@ -1,0 +1,4 @@
+set session role=usertest;
+set search_path=public;
+CREATE TYPE mytype AS (f1 int, f2 int);
+

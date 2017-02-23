@@ -1,0 +1,6 @@
+-- start_ignore
+-- end_ignore
+SELECT setval('myseq', 201);
+psql:/tmp/TestHawqRanger_BasicTest.sql:3: ERROR:  relation "myseq" does not exist
+LINE 1: SELECT setval('myseq', 201);
+               ^

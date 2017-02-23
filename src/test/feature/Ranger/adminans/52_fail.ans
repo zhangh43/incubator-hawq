@@ -1,0 +1,4 @@
+set session role=usertest;
+set search_path=public;
+PREPARE fooplan (int) AS INSERT INTO a VALUES($1);
+

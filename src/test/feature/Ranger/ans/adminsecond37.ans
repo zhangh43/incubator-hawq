@@ -1,0 +1,4 @@
+-- start_ignore
+-- end_ignore
+CREATE SEQUENCE myseq START 0;
+psql:/tmp/TestHawqRanger_BasicTest.sql:3: ERROR:  START value (0) can't be less than MINVALUE (1)

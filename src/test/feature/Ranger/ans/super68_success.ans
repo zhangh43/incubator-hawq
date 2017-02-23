@@ -1,0 +1,6 @@
+-- start_ignore
+-- end_ignore
+set session role=usersuper68;
+SET
+drop table aaa;
+DROP TABLE

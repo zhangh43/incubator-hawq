@@ -1,0 +1,9 @@
+-- start_ignore
+-- end_ignore
+set session role=usersuper63;
+SET
+vacuum analyze;
+psql:/tmp/TestHawqRanger_BasicTest.sql:4: WARNING:  skipping "a" --- error returned: permission denied for relation(s): a
+psql:/tmp/TestHawqRanger_BasicTest.sql:4: WARNING:  skipping "aa" --- error returned: permission denied for relation(s): aa
+psql:/tmp/TestHawqRanger_BasicTest.sql:4: INFO:  ANALYZE completed. Success: 83, Failure: 2 (a, aa)
+VACUUM

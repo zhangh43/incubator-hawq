@@ -1,0 +1,6 @@
+-- start_ignore
+-- end_ignore
+insert into a VALUES (nextval('myseq'));
+psql:/tmp/TestHawqRanger_BasicTest.sql:3: ERROR:  relation "myseq" does not exist
+LINE 1: insert into a VALUES (nextval('myseq'));
+                              ^

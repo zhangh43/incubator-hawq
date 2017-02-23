@@ -1,0 +1,4 @@
+-- start_ignore
+-- end_ignore
+SELECT * INTO aaa FROM a WHERE i > 2;
+SELECT 0

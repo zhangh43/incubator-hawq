@@ -1,0 +1,2 @@
+EXECUTE fooplan(300);
+

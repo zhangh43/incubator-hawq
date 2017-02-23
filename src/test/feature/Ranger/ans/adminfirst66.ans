@@ -1,0 +1,4 @@
+-- start_ignore
+-- end_ignore
+drop SEQUENCE myseq;
+psql:/tmp/TestHawqRanger_BasicTest.sql:3: ERROR:  sequence "myseq" does not exist

@@ -1,0 +1,11 @@
+-- start_ignore
+-- end_ignore
+select * from av;
+ i 
+---
+ 1
+ 1
+ 1
+ 1
+(4 rows)
+

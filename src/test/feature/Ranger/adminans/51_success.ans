@@ -1,0 +1,4 @@
+set session role=usertest;
+set search_path=public;
+SELECT * INTO aaa FROM a WHERE i > 2;
+

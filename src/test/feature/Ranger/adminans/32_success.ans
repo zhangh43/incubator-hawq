@@ -1,0 +1,4 @@
+set session role=usertest;
+set search_path=public;
+insert into ext_t2(i) values(234);
+

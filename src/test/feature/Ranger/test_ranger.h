@@ -14,13 +14,10 @@ using hawq::test::Command;
 
 class TestHawqRanger : public ::testing::Test {
 public:
-	TestHawqRanger() : m_sqlnum(0) {
+	TestHawqRanger() {
 	}
 	~TestHawqRanger() {
 	}
-
-public:
-	int m_sqlnum;
 };
 
 #endif

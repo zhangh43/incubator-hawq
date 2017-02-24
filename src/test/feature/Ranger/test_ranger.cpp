@@ -20,13 +20,12 @@ TEST_F(TestHawqRanger, BasicTest) {
     auto cmd = hawq::test::stringFormat("ls -l %s/Ranger/splitsql/normal/*.sql | grep \"^-\" | wc -l", rootPath.c_str());
     int sql_num = std::atoi(Command::getCommandOutput(cmd).c_str());
     int writablecase = 28;
-    m_sqlnum = sql_num;
     string rangerHost = RANGER_HOST;
     cmd = hawq::test::stringFormat("cp %s/Ranger/a.txt /tmp/", rootPath.c_str());
     Command::getCommandStatus(cmd);
 
     // clear environment
-    for (int i = 1; i <= m_sqlnum; i++) {
+    for (int i = 1; i <= sql_num; i++) {
 		// delete user_num
 		std::string normalusername = hawq::test::stringFormat("usertest%d", i);
 		std::string superusername = hawq::test::stringFormat("usersuper%d", i);
@@ -115,11 +114,7 @@ TEST_F(TestHawqRanger, BasicTest) {
     	util.execSQLFile(admin_sqlfile, admin_ansfile, initfile, true);
     }
 
-
-
-    //string rootPath(util.getTestRootPath());
-	//string rangerHost = RANGER_HOST;
-	for (int i = 1; i <= m_sqlnum; i++) {
+	for (int i = 1; i <= sql_num; i++) {
 		// delete user_num
 		std::string normalusername = hawq::test::stringFormat("usertest%d", i);
 		std::string superusername = hawq::test::stringFormat("usersuper%d", i);
@@ -133,7 +128,6 @@ TEST_F(TestHawqRanger, BasicTest) {
 			Command::getCommandStatus(cmd);
 		}
 	}
-
 
     gpdfist.finalize_gpfdist();
 

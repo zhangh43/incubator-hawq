@@ -121,7 +121,6 @@ TEST_F(TestHawqRanger, BasicTest) {
 			string normal_ansfile_success = hawq::test::stringFormat("Ranger/ans/normal%d_success.ans", i);
 			string super_ansfile_success = hawq::test::stringFormat("Ranger/ans/super%d_success.ans", i);
 
-
 			cmd = hawq::test::stringFormat("ls -l %s/Ranger/policy/%d/ 2>/dev/null| grep \"^-\" | wc -l", rootPath.c_str(), i);
 			int policy_num = std::atoi(Command::getCommandOutput(cmd).c_str());
 			cmd = hawq::test::stringFormat("ls -l %s/Ranger/sql/super/%d.sql 2>/dev/null | grep \"^-\" | wc -l", rootPath.c_str(), i);
@@ -155,5 +154,81 @@ TEST_F(TestHawqRanger, BasicTest) {
 		}
 
 		gpdfist.finalize_gpfdist();
+    }
+}
+
+TEST_F(TestHawqRanger, NegativeTest) {
+    SQLUtility util;
+    if (util.getGUCValue("hawq_acl_type") == "ranger")
+    {
+		string rootPath(util.getTestRootPath());
+		string initfile = hawq::test::stringFormat("Ranger/sql/init_file");
+		auto cmd = hawq::test::stringFormat("ls -l %s/Ranger/sql/deny/*.sql 2>/dev/null| grep \"^-\" | wc -l", rootPath.c_str());
+		int sql_num = std::atoi(Command::getCommandOutput(cmd).c_str());
+		int writableTableCase = 28;
+		string rangerHost = RANGER_HOST;
+
+
+		// clear environment
+		for (int i = 1; i <= sql_num; i++) {
+			// delete user_num
+			std::string denyusername = hawq::test::stringFormat("userdeny%d", i);
+			util.execute(hawq::test::stringFormat("drop role %s;",denyusername.c_str()), false);
+			// delete policy
+			std::string cmd = hawq::test::stringFormat("ls -l %s/Ranger/denypolicy/%d/ 2>/dev/null| grep \"^-\" | wc -l ", rootPath.c_str(), i);
+			int policy_num = std::atoi(Command::getCommandOutput(cmd).c_str());
+			for (int j = 1; j <= policy_num; j++) {
+				cmd = hawq::test::stringFormat("python %s/Ranger/rangerpolicy.py -h %s -d denypolicy%d-%d", rootPath.c_str(), rangerHost.c_str(), i, j);
+				Command::getCommandStatus(cmd);
+			}
+		}
+
+		util.execute("create table a(i int);");
+		for (int i = 1; i <= sql_num; i++) {
+			// create user_num
+			std::string denyusername = hawq::test::stringFormat("userdeny%d", i);
+			util.execute(hawq::test::stringFormat("create role %s with login createdb CREATEEXTTABLE CREATEROLE;", denyusername.c_str()),true);
+			cmd = hawq::test::stringFormat("python %s/Ranger/rangeruser.py -h %s -u %s -f True", rootPath.c_str(),
+					rangerHost.c_str(),denyusername.c_str());
+			Command::getCommandStatus(cmd);
+		}
+		sleep(60);
+
+		for (int i = 1; i <= sql_num; i++) {
+			std::string denyusername = hawq::test::stringFormat("userdeny%d", i);
+			//run sql by different users
+			string deny_sqlfile = hawq::test::stringFormat("Ranger/sql/deny/%d.sql", i);
+			string deny_ansfile_fail = hawq::test::stringFormat("Ranger/ans/deny%d_succeed.ans", i);
+
+			cmd = hawq::test::stringFormat("ls -l %s/Ranger/denypolicy/%d/ 2>/dev/null| grep \"^-\"| wc -l", rootPath.c_str(), i);
+			int policy_num = std::atoi(Command::getCommandOutput(cmd).c_str());
+
+			cmd = hawq::test::stringFormat("ls -l %s/Ranger/sql/super/%d.sql 2>/dev/null| grep \"^-\"| wc -l", rootPath.c_str(), i);
+			int supersqlexist = std::atoi(Command::getCommandOutput(cmd).c_str());
+
+			if (policy_num > 0){
+				util.execSQLFile(deny_sqlfile, deny_ansfile_fail, initfile);
+			}
+
+			for (int j = 1; j <= policy_num; j++) {
+				cmd = hawq::test::stringFormat("python %s/Ranger/rangerpolicy.py -h %s -a %s/Ranger/denypolicy/%d/%d.json", rootPath.c_str(), rangerHost.c_str(), rootPath.c_str(), i, j);
+				Command::getCommandStatus(cmd);
+			}
+		}
+		sleep(60);
+		for (int i = 1; i <= sql_num; i++) {
+			std::string denyusername = hawq::test::stringFormat("userdeny%d", i);
+			//run sql by different users
+			string deny_sqlfile = hawq::test::stringFormat("Ranger/sql/deny/%d.sql", i);
+			string deny_ansfile_fail = hawq::test::stringFormat("Ranger/ans/deny%d_fail.ans", i);
+
+			cmd = hawq::test::stringFormat("ls -l %s/Ranger/denypolicy/%d/ 2>/dev/null| grep \"^-\"| wc -l", rootPath.c_str(), i);
+			int policy_num = std::atoi(Command::getCommandOutput(cmd).c_str());
+
+			if (policy_num > 0){
+				util.execSQLFile(deny_sqlfile, deny_ansfile_fail, initfile);
+			}
+
+		}
     }
 }

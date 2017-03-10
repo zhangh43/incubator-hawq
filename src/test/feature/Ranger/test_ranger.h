@@ -37,6 +37,8 @@ public:
 	void addUser(hawq::test::SQLUtility* util, std::string case_name, int user_index = -1, bool full_policy = false,
 			int writable_index = -1);
 
+	std::string& getRangerHost();
+
 private:
 	std::string rangerHost = "";
 	std::string initfile = "";

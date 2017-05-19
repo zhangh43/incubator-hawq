@@ -157,7 +157,7 @@ public class HawqClient extends BaseClient {
 
         boolean isConnected = false;
         HashMap<String, Object> result = new HashMap<>();
-        Connection conn = null;
+        //Connection conn = null;
 
         String description = CONNECTION_FAILURE_MESSAGE;
 
@@ -166,8 +166,8 @@ public class HawqClient extends BaseClient {
         }
 
         try {
-            conn = getConnection(connectionProperties);
-            if(conn.getCatalog() != null) {
+            //conn = getConnection(connectionProperties);
+            if(con.getCatalog() != null) {
                 isConnected = true;
                 description = CONNECTION_SUCCESSFUL_MESSAGE;
             }
@@ -175,7 +175,7 @@ public class HawqClient extends BaseClient {
             LOG.error("<== HawqClient.checkConnection Error: Failed to connect" + e);
             description = e.getMessage();
         } finally {
-            closeConnection(conn);
+            //closeConnection(conn);
         }
 
         String message = isConnected ? CONNECTION_SUCCESSFUL_MESSAGE : CONNECTION_FAILURE_MESSAGE;
@@ -322,25 +322,6 @@ public class HawqClient extends BaseClient {
         }
 
         return result;
-    }
-
-    private Connection getConnection(Map<String, String> connectionProperties) throws SQLException {
-        return getConnection(connectionProperties, null);
-    }
-
-    private Connection getConnection(Map<String, String> connectionProperties, String database) throws SQLException {
-
-        String db = database != null ? database : DEFAULT_DATABASE;
-        String url = String.format("jdbc:postgresql://%s:%s/%s", connectionProperties.get("hostname"), connectionProperties.get("port"), db);
-
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("<== HawqClient.checkConnection Connecting to: (" + url + ") with user: " + connectionProperties.get("username") );
-        }
-
-        Properties props = new Properties();
-        props.setProperty("user", connectionProperties.get("username"));
-        props.setProperty("password", connectionProperties.get("password"));
-        return DriverManager.getConnection(url, props);
     }
 
     private PreparedStatement handleWildcardPreparedStatement(String userInput, String query, Connection conn) throws SQLException {

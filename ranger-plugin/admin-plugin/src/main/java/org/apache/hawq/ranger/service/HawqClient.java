@@ -127,7 +127,7 @@ public class HawqClient extends BaseClient {
 	}
     
     
-    private void initConnectionKerberos(String userPrincipal, String serverPricipal) throws SQLException{
+    private void initConnectionKerberos(String serverPricipal, String userPrincipal) throws SQLException{
 	    try {
 	    		String url = String.format("jdbc:postgresql://%s:%s/%s?kerberosServerName=%s&jaasApplicationName=pgjdbc&user=%s", 
 	    				connectionProperties.get("hostname"), 

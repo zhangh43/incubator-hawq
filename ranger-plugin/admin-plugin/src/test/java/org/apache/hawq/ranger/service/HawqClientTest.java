@@ -72,7 +72,7 @@ public class HawqClientTest {
         connectionProperties.put("password", "password");
 
         mockStatic(DriverManager.class);
-        suppress(constructor(BaseClient.class, String.class, Map.class));
+        //suppress(constructor(BaseClient.class, String.class, Map.class));
         hawqClient = new HawqClient("hawq", connectionProperties);
 
         hawqClientSpy = PowerMockito.spy(hawqClient);

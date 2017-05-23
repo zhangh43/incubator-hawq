@@ -105,7 +105,11 @@ public class HawqClient extends BaseClient {
 			
 			Subject.doAs(getLoginSubject(), new PrivilegedExceptionAction<Void>(){
 				public Void run() throws Exception {
-					initConnection();
+					final String userName1 = getConfigHolder().getUserName();
+					final String userName2 = connectionProperties.get("username");
+					final String serverprincipal = connectionProperties.get("principal");
+					LOG.info("hubert before initConnectionKerberos "+ userName1 + userName2);
+					initConnectionKerberos(serverprincipal, userName2);
 					return null;
 			}});
 		}
@@ -116,16 +120,22 @@ public class HawqClient extends BaseClient {
 		    
 			Subject.doAs(getLoginSubject(), new PrivilegedExceptionAction<Void>() {
 				public Void run() throws Exception {
-					initConnection(userName,password);
+					initConnection(userName, password);
 					return null;
 			}});
 		}
 	}
     
     
-    private void initConnection() throws SQLException{
+    private void initConnectionKerberos(String userPrincipal, String serverPricipal) throws SQLException{
 	    try {
-          initConnection(null,null);
+	    		String url = String.format("jdbc:postgresql://%s:%s/%s?kerberosServerName=%s&jaasApplicationName=pgjdbc&user=%s", 
+	    				connectionProperties.get("hostname"), 
+	    				connectionProperties.get("port"), DEFAULT_DATABASE, 
+	    				serverPricipal, userPrincipal
+	    				);
+	    		LOG.info("hubert initConnectionKerberos "+ url);
+	    		con = DriverManager.getConnection(url); 
 	    } catch (HadoopException he) {
           LOG.error("Unable to Connect to Hive", he);
           throw he;
@@ -134,13 +144,13 @@ public class HawqClient extends BaseClient {
 
 	
 	private void initConnection(String userName, String password) throws SQLException  {
-		
-	    String url = String.format("jdbc:postgresql://%s:%s/%s", connectionProperties.get("hostname"), connectionProperties.get("port"), DEFAULT_DATABASE);
-	  
-	    if (userName == null && password == null) {
-			con = DriverManager.getConnection(url);
-		} else {
+		try {
+			String url = String.format("jdbc:postgresql://%s:%s/%s", connectionProperties.get("hostname"), connectionProperties.get("port"), DEFAULT_DATABASE);
+			LOG.info("hubert initConnection "+ url);
 			con = DriverManager.getConnection(url, userName, password);
+		} catch (HadoopException he) {
+	          LOG.error("Unable to Connect to Hive", he);
+	          throw he;
 		}
 	}
 

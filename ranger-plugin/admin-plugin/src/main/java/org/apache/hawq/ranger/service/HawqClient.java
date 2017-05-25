@@ -105,11 +105,9 @@ public class HawqClient extends BaseClient {
 			
 			Subject.doAs(getLoginSubject(), new PrivilegedExceptionAction<Void>(){
 				public Void run() throws Exception {
-					final String userName1 = getConfigHolder().getUserName();
-					final String userName2 = connectionProperties.get("username");
+					final String userName = getConfigHolder().getUserName();
 					final String serverprincipal = connectionProperties.get("principal");
-					LOG.info("hubert before initConnectionKerberos "+ userName1 + userName2);
-					initConnectionKerberos(serverprincipal, userName2);
+					initConnectionKerberos(serverprincipal, userName);
 					return null;
 			}});
 		}
@@ -134,11 +132,12 @@ public class HawqClient extends BaseClient {
 	    				connectionProperties.get("port"), DEFAULT_DATABASE, 
 	    				serverPricipal, userPrincipal
 	    				);
-	    		LOG.info("hubert initConnectionKerberos "+ url);
+	    		LOG.info("InitConnectionKerberos "+ url);
 	    		con = DriverManager.getConnection(url); 
-	    } catch (HadoopException he) {
-          LOG.error("Unable to Connect to Hive", he);
-          throw he;
+	    } catch (SQLException e) {
+	      e.printStackTrace();
+          LOG.error("Unable to Connect to Hawq", e);
+          throw e;
 	    }
 	}
 
@@ -146,11 +145,12 @@ public class HawqClient extends BaseClient {
 	private void initConnection(String userName, String password) throws SQLException  {
 		try {
 			String url = String.format("jdbc:postgresql://%s:%s/%s", connectionProperties.get("hostname"), connectionProperties.get("port"), DEFAULT_DATABASE);
-			LOG.info("hubert initConnection "+ url);
+			LOG.info("InitConnection "+ url);
 			con = DriverManager.getConnection(url, userName, password);
-		} catch (HadoopException he) {
-	          LOG.error("Unable to Connect to Hive", he);
-	          throw he;
+		} catch (SQLException e) {
+			  e.printStackTrace();
+	          LOG.error("Unable to Connect to Hawq", e);
+	          throw e;
 		}
 	}
 

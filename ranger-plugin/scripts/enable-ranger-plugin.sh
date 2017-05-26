@@ -144,11 +144,15 @@ function get_hawq_kerberos_service_name() {
 }
 
 function get_lookup_authentication_type() {
-  while [[ -z "$LOOKUP_AUTHENTICATION_TYPE" ]]
-  do
-    LOOKUP_AUTHENTICATION_TYPE=$(read_authentication_type "Lookup authentication type")
-	echo
-  done
+  if [[ -z "$LOOKUP_AUTHENTICATION_TYPE" ]]; then
+    LOOKUP_AUTHENTICATION_TYPE="simple"
+  fi
+
+  #while [[ -z "$LOOKUP_AUTHENTICATION_TYPE" ]]
+  #do
+  #  LOOKUP_AUTHENTICATION_TYPE=$(read_authentication_type "Lookup authentication type")
+  #echo
+  #done
 }
 
 function parse_params() {

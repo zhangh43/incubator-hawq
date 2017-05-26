@@ -20,6 +20,7 @@ package org.apache.hawq.ranger.service;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.security.SecureClientLogin;
 import org.apache.hawq.ranger.model.HawqProtocols;
 import org.apache.ranger.plugin.client.BaseClient;
 import org.apache.ranger.plugin.client.HadoopException;
@@ -72,6 +73,8 @@ public class HawqClient extends BaseClient {
     public static final String PRONAME = "proname";
     public static final String NSPNAME = "nspname";
     public static final String WILDCARD = "*";
+    public static final String KERBEROS = "kerberos";
+    public static final String AUTHENTICATION = "authentication"
 
     public static final List<String> INTERNAL_PROTOCOLS = HawqProtocols.getAllProtocols();
     private static final String DEFAULT_DATABASE = "postgres";
@@ -96,31 +99,42 @@ public class HawqClient extends BaseClient {
         super(serviceName,connectionProperties);
         this.connectionProperties = connectionProperties;
 		initHawq();
-    }
+	}
     
     public void initHawq() throws Exception {
-		isKerberosAuth = getConfigHolder().isKerberosAuthentication();
+		isKerberosAuth = getConfigHolder().isKerberosAuthentication()
+				&& connectionProperties.get(AUTHENTICATION).equals(KERBEROS);
 		if (isKerberosAuth) {
 			LOG.info("Secured Mode: JDBC Connection done with preAuthenticated Subject");
 			
+			// do kinit in hawqclient by principal name and password
+			final String userName = getConfigHolder().getUserName();
+			final String password = getConfigHolder().getPassword();
+			
+			String[] kinitcmd ={
+				"/bin/sh",
+				"-c",
+				"echo '"+password+"' | kinit " + userName
+			};
+			java.lang.Runtime rt = java.lang.Runtime.getRuntime();
+			if (LOG.isDebugEnabled()) {
+				LOG.debug("kinit command: "+"echo '"+password+"' | kinit " + userName);
+			}
+			java.lang.Process p = rt.exec(kinitcmd);
+			
 			Subject.doAs(getLoginSubject(), new PrivilegedExceptionAction<Void>(){
 				public Void run() throws Exception {
-					final String userName = getConfigHolder().getUserName();
+					final String lookupPricipalName = getConfigHolder().getUserName();
 					final String serverprincipal = connectionProperties.get("principal");
-					initConnectionKerberos(serverprincipal, userName);
+					initConnectionKerberos(serverprincipal, lookupPricipalName);
 					return null;
 			}});
 		}
 		else {
-			LOG.info("Since Password is NOT provided, Trying to use UnSecure client with username and password");
+			LOG.info("Trying to use UnSecure client with username and password");
 			final String userName = getConfigHolder().getUserName();
 			final String password = getConfigHolder().getPassword();
-		    
-			Subject.doAs(getLoginSubject(), new PrivilegedExceptionAction<Void>() {
-				public Void run() throws Exception {
-					initConnection(userName, password);
-					return null;
-			}});
+			initConnection(userName, password);
 		}
 	}
     
@@ -132,25 +146,33 @@ public class HawqClient extends BaseClient {
 	    				connectionProperties.get("port"), DEFAULT_DATABASE, 
 	    				serverPricipal, userPrincipal
 	    				);
-	    		LOG.info("InitConnectionKerberos "+ url);
+	    		if (LOG.isDebugEnabled()) {
+	    			LOG.debug("InitConnectionKerberos "+ url);
+	    		}
 	    		con = DriverManager.getConnection(url); 
 	    } catch (SQLException e) {
 	      e.printStackTrace();
           LOG.error("Unable to Connect to Hawq", e);
           throw e;
-	    }
+	    } catch (SecurityException se) {
+			se.printStackTrace();
+		}
 	}
 
 	
 	private void initConnection(String userName, String password) throws SQLException  {
 		try {
 			String url = String.format("jdbc:postgresql://%s:%s/%s", connectionProperties.get("hostname"), connectionProperties.get("port"), DEFAULT_DATABASE);
-			LOG.info("InitConnection "+ url);
+			if (LOG.isDebugEnabled()) {
+				LOG.debug("InitConnectionKerberos "+ url);
+			}
 			con = DriverManager.getConnection(url, userName, password);
 		} catch (SQLException e) {
 			  e.printStackTrace();
 	          LOG.error("Unable to Connect to Hawq", e);
 	          throw e;
+		} catch (SecurityException se) {
+			se.printStackTrace();
 		}
 	}
 

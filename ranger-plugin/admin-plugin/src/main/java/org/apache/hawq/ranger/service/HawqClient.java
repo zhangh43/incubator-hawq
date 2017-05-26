@@ -74,7 +74,7 @@ public class HawqClient extends BaseClient {
     public static final String NSPNAME = "nspname";
     public static final String WILDCARD = "*";
     public static final String KERBEROS = "kerberos";
-    public static final String AUTHENTICATION = "authentication"
+    public static final String AUTHENTICATION = "authentication";
 
     public static final List<String> INTERNAL_PROTOCOLS = HawqProtocols.getAllProtocols();
     private static final String DEFAULT_DATABASE = "postgres";

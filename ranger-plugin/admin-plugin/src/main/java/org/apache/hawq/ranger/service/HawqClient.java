@@ -20,17 +20,11 @@ package org.apache.hawq.ranger.service;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.security.SecureClientLogin;
 import org.apache.hawq.ranger.model.HawqProtocols;
 import org.apache.ranger.plugin.client.BaseClient;
-import org.apache.ranger.plugin.client.HadoopException;
-
-import java.io.File;
-import java.net.MalformedURLException;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
 import java.sql.Connection;
-import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -38,8 +32,6 @@ import java.sql.ResultSet;
 import java.util.*;
 
 import javax.security.auth.Subject;
-
-import static org.apache.ranger.plugin.client.BaseClient.generateResponseDataMap;
 
 public class HawqClient extends BaseClient {
 
@@ -98,8 +90,8 @@ public class HawqClient extends BaseClient {
     public HawqClient(String serviceName, Map<String, String> connectionProperties) throws Exception {
         super(serviceName,connectionProperties);
         this.connectionProperties = connectionProperties;
-		initHawq();
-	}
+        initHawq();
+    }
     
     public void initHawq() throws Exception {
 		isKerberosAuth = getConfigHolder().isKerberosAuthentication()
@@ -138,7 +130,6 @@ public class HawqClient extends BaseClient {
 		}
 	}
     
-    
     private void initConnectionKerberos(String serverPricipal, String userPrincipal) throws SQLException{
 	    try {
 	    		String url = String.format("jdbc:postgresql://%s:%s/%s?kerberosServerName=%s&jaasApplicationName=pgjdbc&user=%s", 
@@ -176,6 +167,9 @@ public class HawqClient extends BaseClient {
 		}
 	}
 
+	public void setConnection(Connection conn) {
+		con = conn;
+	}
 
     /**
      * Uses the connectionProperties and attempts to connect to Hawq.
@@ -189,7 +183,6 @@ public class HawqClient extends BaseClient {
 
         boolean isConnected = false;
         HashMap<String, Object> result = new HashMap<>();
-        //Connection conn = null;
 
         String description = CONNECTION_FAILURE_MESSAGE;
 
@@ -198,7 +191,6 @@ public class HawqClient extends BaseClient {
         }
 
         try {
-            //conn = getConnection(connectionProperties);
             if(con.getCatalog() != null) {
                 isConnected = true;
                 description = CONNECTION_SUCCESSFUL_MESSAGE;
@@ -207,7 +199,6 @@ public class HawqClient extends BaseClient {
             LOG.error("<== HawqClient.checkConnection Error: Failed to connect" + e);
             description = e.getMessage();
         } finally {
-            //closeConnection(conn);
         }
 
         String message = isConnected ? CONNECTION_SUCCESSFUL_MESSAGE : CONNECTION_FAILURE_MESSAGE;

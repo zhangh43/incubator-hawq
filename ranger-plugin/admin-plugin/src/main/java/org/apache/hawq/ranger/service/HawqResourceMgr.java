@@ -22,6 +22,7 @@ import org.apache.ranger.plugin.service.ResourceLookupContext;
 import org.apache.ranger.plugin.util.TimedEventUtil;
 import org.apache.log4j.Logger;
 
+
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
@@ -46,9 +47,7 @@ public abstract class HawqResourceMgr {
 	        		if(LOG.isDebugEnabled()) {
 					LOG.debug("==> HawqResourceMgr.getHawqResources() UserInput: "+ userInput  + " configs: " + configs);
 				}
-	        		
-		        final HawqClient hawqClient = new HawqConnectionMgr().getHawqConnection(serviceName, serviceType, configs);
-		
+	        		final HawqClient hawqClient =new HawqClient(serviceName, configs);
 		        Callable<List<String>> callableObj = null;
 		        
 	            if(hawqClient != null) {

@@ -18,7 +18,7 @@
 
 set -eox pipefail
 
-MVN_OPTS="-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn -DskipTests -B -e"
+MVN_OPTS="-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn -B -e"
 
 # Set HAWQ ranger-plugin rpm build number to 777 as default
 BUILD_NUMBER=${BUILD_NUMBER:-777}

@@ -94,8 +94,7 @@ public class HawqClient extends BaseClient {
     }
     
     public void initHawq() throws Exception {
-		isKerberosAuth = getConfigHolder().isKerberosAuthentication()
-				&& connectionProperties.get(AUTHENTICATION).equals(KERBEROS);
+		isKerberosAuth = connectionProperties.get(AUTHENTICATION).equals(KERBEROS);
 		if (isKerberosAuth) {
 			LOG.info("Secured Mode: JDBC Connection done with preAuthenticated Subject");
 			

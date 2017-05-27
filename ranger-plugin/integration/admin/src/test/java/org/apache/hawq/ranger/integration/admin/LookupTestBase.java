@@ -38,7 +38,7 @@ public abstract class LookupTestBase {
     public void setup() {
         Map<String, String> configs = new HashMap<>();
         configs = new HashMap<>();
-        configs.put("username", "huanzhang");
+        configs.put("username", "gpadmin");
         configs.put("password", "dQSF8ViAE4/I38xmFwJfCg==");
         configs.put("hostname", "localhost");
         configs.put("port", "5432");

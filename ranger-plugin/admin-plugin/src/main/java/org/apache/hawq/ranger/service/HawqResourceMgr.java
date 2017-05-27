@@ -130,8 +130,8 @@ public abstract class HawqResourceMgr {
 					LOG.error("Could not initiate at timedTask");
 				}
 		      
-		
 		        Collections.sort(result);
+		        hawqClient.close();
 	        } catch (Exception e) {
 				LOG.error("Unable to get hive resources.", e);
 				throw e;

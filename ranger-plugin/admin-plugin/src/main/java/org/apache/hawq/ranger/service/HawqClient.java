@@ -196,7 +196,13 @@ public class HawqClient extends BaseClient {
     		if(con !=null && !con.isClosed()){
     			con.close();
     		}
-    		con = DriverManager.getConnection(url); 
+    		if (isKerberosAuth) {
+    			con = DriverManager.getConnection(url); 
+    		} else {
+    			final String userName = getConfigHolder().getUserName();
+    			final String password = getConfigHolder().getPassword();
+    			con = DriverManager.getConnection(url, userName, password);
+    		}
 		} catch (SQLException e) {
 			e.printStackTrace();
 			LOG.error("Unable to Connect to Hawq", e);
